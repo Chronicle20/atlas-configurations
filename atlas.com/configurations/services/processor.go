@@ -2,6 +2,7 @@ package services
 
 import (
 	"atlas-configurations/services/service"
+	"atlas-configurations/services/task"
 	"context"
 	"encoding/json"
 	"errors"
@@ -43,32 +44,84 @@ func (p *Processor) AllProvider() model.Provider[[]interface{}] {
 }
 
 func Make(e Entity) (interface{}, error) {
+	var rm service.RestModel
+
+	// Create a base RestModel with common fields
 	if e.Type == ServiceTypeLogin {
-		var rm service.LoginRestModel
-		err := json.Unmarshal(e.Data, &rm)
+		// For login service
+		var loginData struct {
+			Tasks   []task.RestModel               `json:"tasks"`
+			Tenants []service.LoginTenantRestModel `json:"tenants"`
+		}
+
+		err := json.Unmarshal(e.Data, &loginData)
 		if err != nil {
 			return nil, err
 		}
-		rm.Id = e.Id.String()
-		return rm, nil
+
+		// Create login-specific subdata
+		loginSubData := service.LoginRestModel{
+			Tenants: loginData.Tenants,
+		}
+
+		// Marshal the login subdata to JSON
+		subdataBytes, err := json.Marshal(loginSubData)
+		if err != nil {
+			return nil, err
+		}
+
+		rm.Tasks = loginData.Tasks
+		rm.Subtype = string(ServiceTypeLogin)
+		rm.SubData = subdataBytes
+
 	} else if e.Type == ServiceTypeChannel {
-		var rm service.ChannelRestModel
-		err := json.Unmarshal(e.Data, &rm)
+		// For channel service
+		var channelData struct {
+			Tasks   []task.RestModel                 `json:"tasks"`
+			Tenants []service.ChannelTenantRestModel `json:"tenants"`
+		}
+
+		err := json.Unmarshal(e.Data, &channelData)
 		if err != nil {
 			return nil, err
 		}
-		rm.Id = e.Id.String()
-		return rm, nil
+
+		// Create channel-specific subdata
+		channelSubData := service.ChannelRestModel{
+			Tenants: channelData.Tenants,
+		}
+
+		// Marshal the channel subdata to JSON
+		subdataBytes, err := json.Marshal(channelSubData)
+		if err != nil {
+			return nil, err
+		}
+
+		rm.Tasks = channelData.Tasks
+		rm.Subtype = string(ServiceTypeChannel)
+		rm.SubData = subdataBytes
+
 	} else if e.Type == ServiceTypeDrops {
-		var rm service.GenericRestModel
-		err := json.Unmarshal(e.Data, &rm)
+		// For generic/drops service
+		var genericData struct {
+			Tasks []task.RestModel `json:"tasks"`
+		}
+
+		err := json.Unmarshal(e.Data, &genericData)
 		if err != nil {
 			return nil, err
 		}
-		rm.Id = e.Id.String()
-		return rm, nil
+
+		rm.Tasks = genericData.Tasks
+		rm.Subtype = string(ServiceTypeDrops)
+		// No subdata for generic service
+
+	} else {
+		return nil, errors.New("invalid service type")
 	}
-	return nil, errors.New("invalid service type")
+
+	rm.Id = e.Id.String()
+	return rm, nil
 }
 
 func (p *Processor) GetAll() ([]interface{}, error) {
