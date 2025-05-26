@@ -1,42 +1,34 @@
 package service
 
-import "atlas-configurations/services/task"
+import (
+	"atlas-configurations/services/task"
+	"encoding/json"
+)
 
-type GenericRestModel struct {
-	Id    string           `json:"-"`
-	Tasks []task.RestModel `json:"tasks"`
+// RestModel is a unified model for all service types
+type RestModel struct {
+	Id      string           `json:"-"`
+	Tasks   []task.RestModel `json:"tasks"`
+	Subtype string           `json:"subtype"`
+	SubData json.RawMessage  `json:"subData,omitempty"`
 }
 
-func (r GenericRestModel) GetName() string {
+func (r RestModel) GetName() string {
 	return "services"
 }
 
-func (r GenericRestModel) GetID() string {
+func (r RestModel) GetID() string {
 	return r.Id
 }
 
-func (r *GenericRestModel) SetID(id string) error {
+func (r *RestModel) SetID(id string) error {
 	r.Id = id
 	return nil
 }
 
+// LoginRestModel contains the login-specific data
 type LoginRestModel struct {
-	Id      string                 `json:"-"`
-	Tasks   []task.RestModel       `json:"tasks"`
 	Tenants []LoginTenantRestModel `json:"tenants"`
-}
-
-func (r LoginRestModel) GetName() string {
-	return "services"
-}
-
-func (r LoginRestModel) GetID() string {
-	return r.Id
-}
-
-func (r *LoginRestModel) SetID(id string) error {
-	r.Id = id
-	return nil
 }
 
 type LoginTenantRestModel struct {
@@ -44,23 +36,9 @@ type LoginTenantRestModel struct {
 	Port int    `json:"port"`
 }
 
+// ChannelRestModel contains the channel-specific data
 type ChannelRestModel struct {
-	Id      string                   `json:"-"`
-	Tasks   []task.RestModel         `json:"tasks"`
 	Tenants []ChannelTenantRestModel `json:"tenants"`
-}
-
-func (r ChannelRestModel) GetName() string {
-	return "services"
-}
-
-func (r ChannelRestModel) GetID() string {
-	return r.Id
-}
-
-func (r *ChannelRestModel) SetID(id string) error {
-	r.Id = id
-	return nil
 }
 
 type ChannelTenantRestModel struct {
